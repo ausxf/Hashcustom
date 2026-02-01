@@ -3,22 +3,21 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Daus Custom Hash</title>
+<title>Custom Hash Generator</title>
 
-<!-- Tailwind CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
-
 </head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center px-4">
 
-<div class="w-full max-w-md bg-gray-900 rounded-2xl shadow-lg p-6 space-y-5">
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-start justify-center px-4 pt-8">
 
-    <h1 class="text-xl font-semibold text-center">
-        SHA-512 Custom Hash
-    </h1>
-    <p class="text-sm text-gray-400 text-center">
-        Output tetap 35 aksara · Charset penuh
-    </p>
+<div class="w-full max-w-4xl bg-gray-900 rounded-2xl shadow-lg p-6 space-y-6">
+
+    <div class="text-center">
+        <h1 class="text-xl font-semibold">Custom Hash Generator</h1>
+        <p class="text-sm text-gray-400">
+            Algo sama · Output berbilang panjang
+        </p>
+    </div>
 
     <!-- Input -->
     <div>
@@ -31,35 +30,18 @@
         />
     </div>
 
-    <!-- Button -->
     <button
-        onclick="generateHash()"
-        class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition rounded-lg py-2 font-medium"
+        onclick="generateAll()"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 transition rounded-lg py-2 font-medium"
     >
         Generate Hash
     </button>
 
-    <!-- Output -->
-    <div>
-        <label class="block text-sm mb-1 text-gray-300">Output (35 aksara)</label>
-        <textarea
-            id="output"
-            readonly
-            class="w-full h-24 rounded-lg bg-gray-800 border border-gray-700 px-4 py-2 text-sm resize-none focus:outline-none"
-            placeholder="Hash akan muncul di sini..."
-        ></textarea>
-    </div>
-
-    <!-- Copy -->
-    <button
-        onclick="copyHash()"
-        class="w-full border border-gray-700 hover:bg-gray-800 transition rounded-lg py-2 text-sm"
-    >
-        Salin ke Clipboard
-    </button>
+    <!-- Outputs -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="outputs"></div>
 
     <p class="text-xs text-gray-500 text-center">
-        byte mixing · Deterministic
+        XOR mixing · Deterministic · Bukan password hashing standard
     </p>
 
 </div>
@@ -68,32 +50,70 @@
 const CHARSET =
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>?/";
 
-async function generateHash() {
+const LENGTHS = [35, 50, 100, 300, 500, 2000];
+
+async function generateAll() {
     const input = document.getElementById("input").value;
     if (!input) return;
 
     const encoder = new TextEncoder();
     const data = encoder.encode(input);
-
     const buffer = await crypto.subtle.digest("SHA-512", data);
     const bytes = new Uint8Array(buffer); // 64 byte
 
-    let result = "";
-    for (let i = 0; i < 35; i++) {
-        const b1 = bytes[i];
-        const b2 = bytes[(i + 21) % 64];
-        const b3 = bytes[(i + 43) % 64];
-        const mixed = b1 ^ b2 ^ b3;
-        result += CHARSET[mixed % CHARSET.length];
-    }
+    const container = document.getElementById("outputs");
+    container.innerHTML = "";
 
-    document.getElementById("output").value = result;
+    LENGTHS.forEach(len => {
+        const hash = generateCustomHash(bytes, len);
+        container.appendChild(createOutputBlock(len, hash));
+    });
 }
 
-function copyHash() {
-    const output = document.getElementById("output");
-    if (!output.value) return;
-    navigator.clipboard.writeText(output.value);
+function generateCustomHash(bytes, length) {
+    let result = "";
+    const n = bytes.length;
+
+    for (let i = 0; i < length; i++) {
+        const b1 = bytes[i % n];
+        const b2 = bytes[(i + 21) % n];
+        const b3 = bytes[(i + 43) % n];
+        const mixed = b1 ^ b2 ^ b3 ^ i;
+        result += CHARSET[mixed % CHARSET.length];
+    }
+    return result;
+}
+
+function createOutputBlock(length, value) {
+    const box = document.createElement("div");
+    box.className = "bg-gray-800 rounded-xl p-4 space-y-2";
+
+    const header = document.createElement("div");
+    header.className = "flex justify-between items-center";
+
+    const label = document.createElement("span");
+    label.className = "text-sm text-gray-300";
+    label.textContent = `Output ${length} aksara`;
+
+    const btn = document.createElement("button");
+    btn.className = "text-xs text-indigo-400 hover:underline";
+    btn.textContent = "Copy";
+    btn.onclick = () => navigator.clipboard.writeText(value);
+
+    header.appendChild(label);
+    header.appendChild(btn);
+
+    const textarea = document.createElement("textarea");
+    textarea.readOnly = true;
+    textarea.value = value;
+    textarea.className =
+        "w-full bg-gray-900 border border-gray-700 rounded-lg p-2 text-xs resize-none";
+    textarea.style.height = length >= 500 ? "220px" : "140px";
+
+    box.appendChild(header);
+    box.appendChild(textarea);
+
+    return box;
 }
 </script>
 
