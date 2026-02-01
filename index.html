@@ -1,37 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 <head>
-<meta charset="UTF-8">
-<title>Custom Hash (35 Aksara)</title>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: #0d0d0d;
-    color: #f0f0f0;
-    padding: 30px;
-}
-input, textarea, button {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    font-size: 16px;
-}
-textarea {
-    height: 90px;
-}
-button {
-    cursor: pointer;
-}
-</style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Daus Custom Hash</title>
+
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
+
 </head>
-<body>
+<body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center px-4">
 
-<h2>SHA-512 → Custom Hash (35 Aksara)</h2>
+<div class="w-full max-w-md bg-gray-900 rounded-2xl shadow-lg p-6 space-y-5">
 
-<input type="text" id="input" placeholder="Masukkan teks...">
-<button onclick="generateHash()">Generate</button>
+    <h1 class="text-xl font-semibold text-center">
+        SHA-512 Custom Hash
+    </h1>
+    <p class="text-sm text-gray-400 text-center">
+        Output tetap 35 aksara · Charset penuh
+    </p>
 
-<textarea id="output" readonly placeholder="Output hash..."></textarea>
+    <!-- Input -->
+    <div>
+        <label class="block text-sm mb-1 text-gray-300">Input</label>
+        <input
+            id="input"
+            type="text"
+            placeholder="Masukkan teks..."
+            class="w-full rounded-lg bg-gray-800 border border-gray-700 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+    </div>
+
+    <!-- Button -->
+    <button
+        onclick="generateHash()"
+        class="w-full bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 transition rounded-lg py-2 font-medium"
+    >
+        Generate Hash
+    </button>
+
+    <!-- Output -->
+    <div>
+        <label class="block text-sm mb-1 text-gray-300">Output (35 aksara)</label>
+        <textarea
+            id="output"
+            readonly
+            class="w-full h-24 rounded-lg bg-gray-800 border border-gray-700 px-4 py-2 text-sm resize-none focus:outline-none"
+            placeholder="Hash akan muncul di sini..."
+        ></textarea>
+    </div>
+
+    <!-- Copy -->
+    <button
+        onclick="copyHash()"
+        class="w-full border border-gray-700 hover:bg-gray-800 transition rounded-lg py-2 text-sm"
+    >
+        Salin ke Clipboard
+    </button>
+
+    <p class="text-xs text-gray-500 text-center">
+        byte mixing · Deterministic
+    </p>
+
+</div>
 
 <script>
 const CHARSET =
@@ -44,23 +75,25 @@ async function generateHash() {
     const encoder = new TextEncoder();
     const data = encoder.encode(input);
 
-    // SHA-512
     const buffer = await crypto.subtle.digest("SHA-512", data);
     const bytes = new Uint8Array(buffer); // 64 byte
 
     let result = "";
-
     for (let i = 0; i < 35; i++) {
-        // Mixing: awal + tengah + hujung
         const b1 = bytes[i];
         const b2 = bytes[(i + 21) % 64];
         const b3 = bytes[(i + 43) % 64];
-
         const mixed = b1 ^ b2 ^ b3;
         result += CHARSET[mixed % CHARSET.length];
     }
 
     document.getElementById("output").value = result;
+}
+
+function copyHash() {
+    const output = document.getElementById("output");
+    if (!output.value) return;
+    navigator.clipboard.writeText(output.value);
 }
 </script>
 
