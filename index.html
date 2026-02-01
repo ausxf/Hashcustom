@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Custom Hash (35 Aksara)</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #0d0d0d;
+    color: #f0f0f0;
+    padding: 30px;
+}
+input, textarea, button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 16px;
+}
+textarea {
+    height: 90px;
+}
+button {
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<h2>SHA-512 → Custom Hash (35 Aksara)</h2>
+
+<input type="text" id="input" placeholder="Masukkan teks...">
+<button onclick="generateHash()">Generate</button>
+
+<textarea id="output" readonly placeholder="Output hash..."></textarea>
+
+<script>
+const CHARSET =
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{};:,.<>?/";
+
+async function generateHash() {
+    const input = document.getElementById("input").value;
+    if (!input) return;
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+
+    // SHA-512
+    const buffer = await crypto.subtle.digest("SHA-512", data);
+    const bytes = new Uint8Array(buffer); // 64 byte
+
+    let result = "";
+
+    for (let i = 0; i < 35; i++) {
+        // Mixing: awal + tengah + hujung
+        const b1 = bytes[i];
+        const b2 = bytes[(i + 21) % 64];
+        const b3 = bytes[(i + 43) % 64];
+
+        const mixed = b1 ^ b2 ^ b3;
+        result += CHARSET[mixed % CHARSET.length];
+    }
+
+    document.getElementById("output").value = result;
+}
+</script>
+
+</body>
+</html>
